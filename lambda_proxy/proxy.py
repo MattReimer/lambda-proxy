@@ -15,10 +15,10 @@ class Request(object):
     """The current request from API gateway.
     """
 
-    def __init__(self, query_params, uri_params, method):
-        self.query_params = query_params
-        self.uri_params = uri_params
-        self.method = method
+    def __init__(self, event):
+        self.query_params = event['queryStringParameters']
+        self.uri_params = event['path']
+        self.method = event['httpMethod']
 
 
 class RouteEntry(object):
@@ -235,10 +235,10 @@ class API(object):
 
         view_function = route_entry.view_function
         function_args = self._get_matching_args(route_entry.uri_pattern, resource_path)
-        self.current_request = Request(event['queryStringParameters'], event['path'], event['httpMethod'])
+        self.current_request = Request(event)
 
         try:
-            response = view_function(*function_args)
+            response = view_function(event, context, *function_args)
 
         except Exception as err:
             self.log.error(str(err))
