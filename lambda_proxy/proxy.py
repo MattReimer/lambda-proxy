@@ -8,7 +8,8 @@ import sys
 import json
 import logging
 
-_PARAMS = re.compile('<\w+\:?\w+>')
+_PARAMS = '<\w+\:?\w+>'
+_URLWORDS = '[\w_\-]+'
 
 
 class Request(object):
@@ -37,7 +38,7 @@ class RouteEntry(object):
             return []
         # The [1:-1] slice is to remove the braces
         # e.g {foobar} -> foobar
-        results = [r[1:-1] for r in _PARAMS.findall(self.uri_pattern)]
+        results = [r[1:-1] for r in re.compile(_PARAMS).findall(self.uri_pattern)]
         return results
 
     def __eq__(self, other):
@@ -124,7 +125,7 @@ class API(object):
 
     def _get_route_match(self, url):
         for path, function in self.routes.items():
-            route_expr = re.compile(re.sub('<\w+\:?\w+>', '\w+', path))
+            route_expr = re.compile(re.sub(re.compile(_PARAMS), _URLWORDS, path) + "$")
             if route_expr.match(url):
                 return path
         return ''
@@ -147,8 +148,8 @@ class API(object):
             return value
 
     def _get_matching_args(self, route, url):
-        url_expr = re.compile('\w+')
-        route_expr = re.compile('\w+|<\w+\:?\w+>')
+        url_expr = re.compile(_URLWORDS)
+        route_expr = re.compile("{}|{}".format(_URLWORDS, _PARAMS))
 
         url_args = url_expr.findall(url)
         route_args = route_expr.findall(route)
